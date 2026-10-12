@@ -25,6 +25,21 @@
       "expo-sqlite",
       "expo-sharing",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6d4d1bc1-d456-42e1-9ec2-bd6bd482e0ea"
+      }
+    },
+    "owner": "hungwbro",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6d4d1bc1-d456-42e1-9ec2-bd6bd482e0ea",
+      "requestHeaders": {
+        "expo-channel-name": "preview"
+      }
+    }
   }
 }

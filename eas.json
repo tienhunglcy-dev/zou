@@ -1,0 +1,14 @@
+{
+  "cli": {
+    "version": ">= 24.0.0"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview"
+    },
+    "production": {
+      "channel": "production"
+    }
+  }
+}
