@@ -7,7 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hungwbro.zou"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,8 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-sqlite\\"
     ]
   }
 }
