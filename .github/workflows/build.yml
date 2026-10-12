@@ -1,0 +1,42 @@
+name: Build IPA
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tao file .env
+        run: |
+          echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_KEY }}" >> .env
+
+      - run: npm install
+
+      - run: npx expo prebuild --platform ios
+
+      - name: Build
+        run: |
+          cd ios
+          WS=$(ls -d *.xcworkspace | head -n 1)
+          SCHEME="${WS%.xcworkspace}"
+          xcodebuild -workspace "$WS" -scheme "$SCHEME" \
+            -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+
+      - name: Dong goi IPA
+        run: |
+          APP=$(find ios/build/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -n 1)
+          mkdir Payload
+          cp -r "$APP" Payload/
+          zip -qr Zou.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zou-ipa
+          path: Zou.ipa
