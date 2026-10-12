@@ -5,17 +5,20 @@ import {
   Alert, ScrollView, LayoutAnimation, Keyboard, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from './lib/supabase';
 
-const BLUE = '#0A7CFF';
-const BG = '#F2F3F5';
-const TEXT = '#1B1F23';
-const SUB = '#7A8087';
-const LINE = '#E6E8EB';
-const RED = '#F23C3C';
+// Centralized dark design tokens for Zou's conversation-first interface.
+const BLUE = '#07C160';
+const BG = '#111111';
+const SURFACE = '#1B1B1B';
+const TEXT = '#F5F5F5';
+const SUB = '#939393';
+const LINE = '#2B2B2B';
+const RED = '#FA5151';
 const ME = 'Tôi';
 
 const AVATAR_COLORS = ['#F4B400', '#34A853', '#EA4335', '#9C27B0', '#00ACC1', '#FF7043', '#5C6BC0'];
@@ -59,13 +62,10 @@ function Avatar({ name, size = 48 }) {
   );
 }
 
-function Header({ onSearch, right }) {
+function Header({ title = 'Zou', onSearch, right }) {
   return (
     <View style={s.header}>
-      <TouchableOpacity style={s.searchWrap} onPress={onSearch} activeOpacity={0.8}>
-        <Ionicons name="search" size={20} color="#fff" />
-        <Text style={s.headerText}>Tìm kiếm</Text>
-      </TouchableOpacity>
+      <Text style={s.headerTitle}>{title}</Text>
       <View style={{ flexDirection: 'row', gap: 18, alignItems: 'center' }}>{right}</View>
     </View>
   );
@@ -73,8 +73,8 @@ function Header({ onSearch, right }) {
 
 function Empty({ icon, title, sub, action, onAction }) {
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#fff' }}>
-      <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#E8F2FF', alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: BG }}>
+      <View style={{ width: 84, height: 84, borderRadius: 24, backgroundColor: '#173A26', alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={46} color={BLUE} />
       </View>
       <Text style={{ fontSize: 18, fontWeight: '600', color: TEXT, marginTop: 18 }}>{title}</Text>
@@ -111,7 +111,7 @@ function SwipeRow({ children, onPress, onDelete, onRead }) {
   })).current;
 
   return (
-    <View style={{ overflow: 'hidden', backgroundColor: '#fff' }}>
+    <View style={{ overflow: 'hidden', backgroundColor: SURFACE }}>
       <View style={s.actions}>
         <TouchableOpacity style={[s.actionBtn, { backgroundColor: '#6B8FBF' }]} onPress={() => { snap(0); onRead(); }}>
           <Ionicons name="checkmark-done" size={22} color="#fff" />
@@ -122,7 +122,7 @@ function SwipeRow({ children, onPress, onDelete, onRead }) {
           <Text style={s.actionText}>Xóa</Text>
         </TouchableOpacity>
       </View>
-      <Animated.View style={{ transform: [{ translateX: x }], backgroundColor: '#fff' }} {...pan.panHandlers}>
+      <Animated.View style={{ transform: [{ translateX: x }], backgroundColor: SURFACE }} {...pan.panHandlers}>
         <TouchableOpacity activeOpacity={0.6} onPress={() => (open.current ? snap(0) : onPress())}>
           {children}
         </TouchableOpacity>
@@ -138,9 +138,9 @@ function Messages({ chats, nameOf, onOpen, onSearch, onAdd, onDelete, onRead, go
     .sort((a, b) => b[1].ts - a[1].ts);
   return (
     <View style={{ flex: 1 }}>
-      <Header onSearch={onSearch} right={[
-        <Ionicons key="q" name="qr-code-outline" size={22} color="#fff" />,
-        <TouchableOpacity key="p" onPress={onAdd}><Ionicons name="person-add-outline" size={23} color="#fff" /></TouchableOpacity>,
+      <Header title="Zou" onSearch={onSearch} right={[
+        <TouchableOpacity key="search" onPress={onSearch} accessibilityLabel="Tìm kiếm"><Ionicons name="search-outline" size={25} color={TEXT} /></TouchableOpacity>,
+        <TouchableOpacity key="add" onPress={onAdd} accessibilityLabel="Thêm bạn"><Ionicons name="add-circle-outline" size={27} color={TEXT} /></TouchableOpacity>,
       ]} />
       {list.length === 0 ? (
         <Empty icon="chatbubbles-outline" title="Chưa có tin nhắn" sub="Hãy chọn một người bạn trong danh bạ để bắt đầu trò chuyện." action="Tìm bạn bè" onAction={goContacts} />
@@ -153,14 +153,14 @@ function Messages({ chats, nameOf, onOpen, onSearch, onAdd, onDelete, onRead, go
             return (
               <SwipeRow onPress={() => onOpen(id)} onDelete={() => onDelete(id)} onRead={() => onRead(id)}>
                 <View style={s.row}>
-                  <Avatar name={nameOf(id)} />
+                  <Avatar name={nameOf(id)} size={52} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={s.name} numberOfLines={1}>{nameOf(id)}</Text>
                     <Text style={[s.last, c.unread > 0 && { color: TEXT, fontWeight: '600' }]} numberOfLines={1}>
                       {last.me ? 'Bạn: ' : ''}{last.text}
                     </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                  <View style={{ alignItems: 'flex-end', gap: 7, paddingLeft: 8 }}>
                     <Text style={s.time}>{last.time}</Text>
                     {c.unread > 0 ? (
                       <View style={s.badge}><Text style={s.badgeText}>{c.unread > 5 ? '5+' : c.unread}</Text></View>
@@ -170,7 +170,7 @@ function Messages({ chats, nameOf, onOpen, onSearch, onAdd, onDelete, onRead, go
               </SwipeRow>
             );
           }}
-          ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: LINE, marginLeft: 74 }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: LINE, marginLeft: 80 }} />}
         />
       )}
     </View>
@@ -180,14 +180,14 @@ function Messages({ chats, nameOf, onOpen, onSearch, onAdd, onDelete, onRead, go
 /* ---------- Tab Danh bạ ---------- */
 function Contacts({ contacts, onOpen, onSearch, onAdd }) {
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <Header onSearch={onSearch} right={[
-        <TouchableOpacity key="a" onPress={onAdd}><Ionicons name="person-add-outline" size={23} color="#fff" /></TouchableOpacity>,
+    <View style={{ flex: 1, backgroundColor: BG }}>
+      <Header title="Danh bạ" onSearch={onSearch} right={[
+        <TouchableOpacity key="search" onPress={onSearch}><Ionicons name="search-outline" size={25} color={TEXT} /></TouchableOpacity>,
+        <TouchableOpacity key="a" onPress={onAdd}><Ionicons name="add-circle-outline" size={27} color={TEXT} /></TouchableOpacity>,
       ]} />
       <View style={s.subTabs}>
         <Text style={[s.subTab, { color: TEXT, borderBottomColor: BLUE, borderBottomWidth: 2 }]}>Bạn bè ({contacts.length})</Text>
         <Text style={s.subTab}>Nhóm</Text>
-        <Text style={s.subTab}>OA</Text>
       </View>
       {contacts.length === 0 ? (
         <Empty icon="people-outline" title="Chưa có bạn bè" sub="Bấm biểu tượng thêm bạn ở góc trên để tìm theo tên đăng nhập." action="Thêm bạn" onAction={onAdd} />
@@ -280,8 +280,9 @@ function Feed({ posts, onlyMine, onSearch, onCompose, onLike, onComment, onDelet
   const data = onlyMine ? posts.filter((p) => p.author === ME) : posts;
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Header onSearch={onSearch} right={[
-        <TouchableOpacity key="c" onPress={onCompose}><Ionicons name="create-outline" size={24} color="#fff" /></TouchableOpacity>,
+      <Header title="Khám phá" onSearch={onSearch} right={[
+        <TouchableOpacity key="search" onPress={onSearch}><Ionicons name="search-outline" size={25} color={TEXT} /></TouchableOpacity>,
+        <TouchableOpacity key="c" onPress={onCompose}><Ionicons name="add-circle-outline" size={27} color={TEXT} /></TouchableOpacity>,
       ]} />
       <FlatList
         style={{ backgroundColor: BG }}
@@ -295,7 +296,7 @@ function Feed({ posts, onlyMine, onSearch, onCompose, onLike, onComment, onDelet
             <Ionicons name="create-outline" size={22} color={BLUE} />
           </TouchableOpacity>
         }
-        ListEmptyComponent={<Text style={{ textAlign: 'center', color: SUB, marginTop: 40 }}>Chưa có bài đăng nào</Text>}
+        ListEmptyComponent={<Empty icon="compass-outline" title="Chưa có nội dung mới" sub="Bạn sẽ thấy bài đăng từ những người mình theo dõi ở đây." />}
         renderItem={({ item }) => <PostCard post={item} onLike={onLike} onComment={onComment} onDelete={onDelete} />}
       />
     </KeyboardAvoidingView>
@@ -303,7 +304,7 @@ function Feed({ posts, onlyMine, onSearch, onCompose, onLike, onComment, onDelet
 }
 
 /* ---------- Cá nhân ---------- */
-function Profile({ me, onSearch, onLogout, onBackup, onRestore }) {
+function Profile({ me, onSearch, onLogout, onBackup, onRestore, onCheckUpdate }) {
   const item = (ic, l, onPress) => (
     <TouchableOpacity key={l} style={s.row} onPress={onPress} activeOpacity={onPress ? 0.6 : 1}>
       <Ionicons name={ic} size={24} color={BLUE} />
@@ -313,7 +314,10 @@ function Profile({ me, onSearch, onLogout, onBackup, onRestore }) {
   );
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
-      <Header onSearch={onSearch} right={[<Ionicons key="s" name="settings-outline" size={22} color="#fff" />]} />
+      <Header title="Tôi" onSearch={onSearch} right={[
+        <TouchableOpacity key="search" onPress={onSearch}><Ionicons name="search-outline" size={25} color={TEXT} /></TouchableOpacity>,
+        <Ionicons key="s" name="settings-outline" size={24} color={TEXT} />
+      ]} />
       <View style={[s.row, { paddingVertical: 16 }]}>
         <Avatar name={me.display_name} size={60} />
         <View style={{ marginLeft: 14, flex: 1 }}>
@@ -324,6 +328,7 @@ function Profile({ me, onSearch, onLogout, onBackup, onRestore }) {
       <View style={{ marginTop: 8 }}>
         {item('cloud-upload-outline', 'Sao lưu tin nhắn', onBackup)}
         {item('cloud-download-outline', 'Khôi phục từ bản sao lưu', onRestore)}
+        {item('reload-outline', 'Kiểm tra bản cập nhật', onCheckUpdate)}
         {item('shield-checkmark-outline', 'Tài khoản và bảo mật')}
         {item('lock-closed-outline', 'Quyền riêng tư')}
       </View>
@@ -344,12 +349,12 @@ function Chat({ id, name, chat, onBack, onSend }) {
   const msgs = chat ? chat.messages : [];
   const send = () => { if (text.trim()) { onSend(id, text.trim()); setText(''); } };
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#E8EEF4' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[s.header, { gap: 14 }]}>
         <TouchableOpacity onPress={onBack}><Ionicons name="chevron-back" size={26} color="#fff" /></TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }} numberOfLines={1}>{name}</Text>
-          <Text style={{ color: '#D6E8FF', fontSize: 12 }}>Vừa truy cập</Text>
+          <Text style={{ color: SUB, fontSize: 12 }}>Đang hoạt động</Text>
         </View>
         <Ionicons name="call-outline" size={22} color="#fff" />
         <Ionicons name="videocam-outline" size={24} color="#fff" />
@@ -372,7 +377,7 @@ function Chat({ id, name, chat, onBack, onSend }) {
             <View style={{ flexDirection: 'row', justifyContent: item.me ? 'flex-end' : 'flex-start', marginBottom: 8 }}>
               {!item.me && <View style={{ marginRight: 8, alignSelf: 'flex-end' }}><Avatar name={name} size={30} /></View>}
               <View style={[s.bubble, item.me ? s.bubbleMe : s.bubbleOther]}>
-                <Text style={{ fontSize: 16, color: TEXT }}>{item.text}</Text>
+                <Text style={{ fontSize: 16, color: item.me ? '#102214' : TEXT }}>{item.text}</Text>
                 <Text style={{ fontSize: 11, color: SUB, marginTop: 4 }}>{item.time}</Text>
               </View>
             </View>
@@ -406,7 +411,7 @@ function Search({ contacts, chats, posts, nameOf, onBack, onOpenChat, onOpenPost
   const none = n && !fr.length && !ms.length && !ps.length;
   const title = (x) => <Text style={s.section}>{x}</Text>;
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: BG }}>
       <View style={[s.header, { gap: 10 }]}>
         <TouchableOpacity onPress={onBack}><Ionicons name="chevron-back" size={26} color="#fff" /></TouchableOpacity>
         <TextInput autoFocus style={s.searchInput} placeholder="Tìm bạn bè, tin nhắn, bài đăng" placeholderTextColor="#BBD9FF" value={q} onChangeText={setQ} />
@@ -451,7 +456,7 @@ function Compose({ onClose, onPost }) {
   const [t, setT] = useState('');
   const ok = t.trim().length > 0;
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: BG }}>
       <View style={s.header}>
         <TouchableOpacity onPress={onClose}><Text style={{ color: '#fff', fontSize: 16 }}>Hủy</Text></TouchableOpacity>
         <Text style={{ flex: 1, textAlign: 'center', color: '#fff', fontSize: 17, fontWeight: '600' }}>Tạo bài đăng</Text>
@@ -481,7 +486,7 @@ function AddFriend({ me, friendIds, onClose, onAdd, onChat }) {
     if (error) Alert.alert('Lỗi', error.message); else setRes(data);
   };
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flex: 1, backgroundColor: BG }}>
       <View style={[s.header, { gap: 14 }]}>
         <TouchableOpacity onPress={onClose}><Ionicons name="chevron-back" size={26} color="#fff" /></TouchableOpacity>
         <Text style={{ color: '#fff', fontSize: 17, fontWeight: '600' }}>Thêm bạn</Text>
@@ -531,7 +536,7 @@ function Auth() {
     else if (mode === 'up' && !data.session) Alert.alert('Kiểm tra email', 'Hãy bấm liên kết xác nhận trong email rồi quay lại đăng nhập.');
   };
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }} keyboardShouldPersistTaps="handled">
         <Text style={{ fontSize: 56, fontWeight: '800', color: BLUE, textAlign: 'center' }}>Zou</Text>
         <Text style={{ color: SUB, textAlign: 'center', marginBottom: 28 }}>{mode === 'in' ? 'Đăng nhập để tiếp tục' : 'Tạo tài khoản mới'}</Text>
@@ -565,7 +570,7 @@ function Setup({ session, onDone }) {
     else onDone(data);
   };
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: BG }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }} keyboardShouldPersistTaps="handled">
         <Text style={{ fontSize: 24, fontWeight: '700', color: TEXT, textAlign: 'center' }}>Hoàn tất hồ sơ</Text>
         <Text style={{ color: SUB, textAlign: 'center', marginBottom: 24, marginTop: 6 }}>Bạn bè sẽ tìm bạn bằng tên đăng nhập</Text>
@@ -598,7 +603,7 @@ function Splash({ onDone }) {
     ]).start(onDone);
   }, []);
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ opacity: op, transform: [{ scale: sc }], alignItems: 'center' }}>
         <Text style={{ fontSize: 64, fontWeight: '800', color: BLUE, letterSpacing: 1 }}>Zou</Text>
         <Text style={{ color: SUB, fontSize: 15, marginTop: 6 }}>Nhắn tin, kết nối</Text>
@@ -609,11 +614,10 @@ function Splash({ onDone }) {
 
 /* ---------- App ---------- */
 const TABS = [
-  ['chatbubble', 'chatbubble-outline', 'Tin nhắn'],
+  ['chatbubble', 'chatbubble-outline', 'Trò chuyện'],
   ['people', 'people-outline', 'Danh bạ'],
-  ['home', 'home-outline', 'Trang chủ'],
-  ['time', 'time-outline', 'Nhật ký'],
-  ['person', 'person-outline', 'Cá nhân'],
+  ['compass', 'compass-outline', 'Khám phá'],
+  ['person', 'person-outline', 'Tôi'],
 ];
 
 function Main({ me }) {
@@ -797,6 +801,16 @@ function Main({ me }) {
   const shared = { onSearch: () => setScreen({ type: 'search' }) };
   const goAdd = () => setScreen({ type: 'addfriend' });
   const goCompose = () => setScreen({ type: 'compose' });
+  const checkForUpdate = async () => {
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (!result.isAvailable) { Alert.alert('Zou đã mới nhất', 'Chưa có bản cập nhật nào để tải.'); return; }
+      await Updates.fetchUpdateAsync();
+      Alert.alert('Đã tải bản mới', 'Chọn OK để mở lại ứng dụng với giao diện mới.', [{ text: 'OK', onPress: () => Updates.reloadAsync() }]);
+    } catch {
+      Alert.alert('Chưa thể kiểm tra', 'Tính năng này hoạt động trên bản IPA mới đã bật Expo Updates.');
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -816,8 +830,7 @@ function Main({ me }) {
               onDelete={deleteChat} onRead={readChat} goContacts={() => setTab(1)} />}
             {tab === 1 && <Contacts contacts={contacts} {...shared} onOpen={openChat} onAdd={goAdd} />}
             {tab === 2 && <Feed posts={posts} {...shared} onCompose={goCompose} onLike={like} onComment={comment} onDelete={delPost} />}
-            {tab === 3 && <Feed posts={posts} onlyMine {...shared} onCompose={goCompose} onLike={like} onComment={comment} onDelete={delPost} />}
-            {tab === 4 && <Profile me={me} {...shared} onLogout={() => supabase.auth.signOut()} onBackup={backup} onRestore={restore} />}
+            {tab === 3 && <Profile me={me} {...shared} onLogout={() => supabase.auth.signOut()} onBackup={backup} onRestore={restore} onCheckUpdate={checkForUpdate} />}
           </View>
           {!kb && (
             <View style={s.tabBar}>
@@ -842,7 +855,7 @@ function Main({ me }) {
 
 function Loading({ err, onRetry }) {
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: BG, alignItems: 'center', justifyContent: 'center' }}>
       {err ? (
         <>
           <Text style={{ color: SUB }}>Không kết nối được máy chủ</Text>
@@ -878,7 +891,6 @@ export default function App() {
     return () => { on = false; };
   }, [uid, tries]);
 
-  const inApp = !splash && !!session && !!me;
   let body;
   if (splash) body = <Splash onDone={() => setSplash(false)} />;
   else if (session === undefined || (session && me === undefined)) body = <Loading err={loadErr} onRetry={() => setTries(tries + 1)} />;
@@ -887,8 +899,8 @@ export default function App() {
   else body = <Main key={me.id} me={me} />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: inApp ? BLUE : '#fff', paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
-      <StatusBar barStyle={inApp ? 'light-content' : 'dark-content'} backgroundColor={inApp ? BLUE : '#fff'} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: BG, paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }}>
+      <StatusBar barStyle="light-content" backgroundColor={BG} />
       {body}
     </SafeAreaView>
   );
@@ -896,32 +908,31 @@ export default function App() {
 
 const s = StyleSheet.create({
   smallBtn: { backgroundColor: BLUE, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16 },
-  header: { backgroundColor: BLUE, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, height: 54, gap: 10 },
-  searchWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, height: 54 },
-  headerText: { color: '#D6E8FF', fontSize: 16 },
-  searchInput: { flex: 1, color: '#fff', fontSize: 16, height: 40 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#fff' },
+  header: { backgroundColor: SURFACE, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 56, borderBottomWidth: 1, borderBottomColor: LINE },
+  headerTitle: { color: TEXT, fontSize: 18, fontWeight: '700', letterSpacing: -0.2 },
+  searchInput: { flex: 1, color: TEXT, fontSize: 16, height: 40 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: SURFACE },
   name: { fontSize: 16, fontWeight: '500', color: TEXT },
   last: { fontSize: 14, color: SUB, marginTop: 3 },
   time: { fontSize: 12, color: SUB },
   badge: { backgroundColor: RED, borderRadius: 9, minWidth: 18, height: 18, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center' },
   badgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  tabBadge: { position: 'absolute', top: -5, right: -12, backgroundColor: RED, borderRadius: 9, minWidth: 18, height: 18, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#fff' },
+  tabBadge: { position: 'absolute', top: -5, right: -12, backgroundColor: RED, borderRadius: 9, minWidth: 18, height: 18, paddingHorizontal: 5, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: SURFACE },
   actions: { position: 'absolute', right: 0, top: 0, bottom: 0, width: ACTION_W, flexDirection: 'row' },
   actionBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   actionText: { color: '#fff', fontSize: 12, marginTop: 3, fontWeight: '500' },
-  subTabs: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: LINE },
+  subTabs: { flexDirection: 'row', backgroundColor: SURFACE, borderBottomWidth: 1, borderBottomColor: LINE },
   subTab: { flex: 1, textAlign: 'center', paddingVertical: 12, fontSize: 15, fontWeight: '500', color: SUB },
-  tabBar: { flexDirection: 'row', backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: LINE, paddingBottom: 4 },
+  tabBar: { flexDirection: 'row', backgroundColor: SURFACE, borderTopWidth: 1, borderTopColor: LINE, paddingBottom: 6 },
   tab: { flex: 1, alignItems: 'center', paddingTop: 8, paddingBottom: 4 },
   bubble: { maxWidth: '75%', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-  bubbleMe: { backgroundColor: '#D6EAFF' },
-  bubbleOther: { backgroundColor: '#fff' },
-  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 8, gap: 10, borderTopWidth: 1, borderTopColor: LINE },
+  bubbleMe: { backgroundColor: BLUE },
+  bubbleOther: { backgroundColor: SURFACE },
+  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SURFACE, paddingHorizontal: 12, paddingVertical: 8, gap: 10, borderTopWidth: 1, borderTopColor: LINE },
   input: { flex: 1, fontSize: 16, paddingVertical: 6, color: TEXT },
   primaryBtn: { backgroundColor: BLUE, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 24, marginTop: 20 },
-  composer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 14, marginBottom: 8 },
-  post: { backgroundColor: '#fff', padding: 14, marginBottom: 8 },
+  composer: { flexDirection: 'row', alignItems: 'center', backgroundColor: SURFACE, padding: 14, marginBottom: 8 },
+  post: { backgroundColor: SURFACE, padding: 14, marginBottom: 8 },
   postActions: { flexDirection: 'row', marginTop: 10, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 4 },
   postBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
   comment: { marginLeft: 8, backgroundColor: BG, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6, flexShrink: 1 },
