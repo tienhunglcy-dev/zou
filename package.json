@@ -12,7 +12,6 @@
     "expo-sharing": "~57.0.23",
     "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
-    "expo-updates": "~57.0.26",
     "react": "19.2.3",
     "react-native": "0.86.3",
     "react-native-url-polyfill": "^4.0.0"

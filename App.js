@@ -5,7 +5,6 @@ import {
   Alert, ScrollView, LayoutAnimation, Keyboard, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Updates from 'expo-updates';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -304,7 +303,7 @@ function Feed({ posts, onlyMine, onSearch, onCompose, onLike, onComment, onDelet
 }
 
 /* ---------- Cá nhân ---------- */
-function Profile({ me, onSearch, onLogout, onBackup, onRestore, onCheckUpdate }) {
+function Profile({ me, onSearch, onLogout, onBackup, onRestore }) {
   const item = (ic, l, onPress) => (
     <TouchableOpacity key={l} style={s.row} onPress={onPress} activeOpacity={onPress ? 0.6 : 1}>
       <Ionicons name={ic} size={24} color={BLUE} />
@@ -328,7 +327,6 @@ function Profile({ me, onSearch, onLogout, onBackup, onRestore, onCheckUpdate })
       <View style={{ marginTop: 8 }}>
         {item('cloud-upload-outline', 'Sao lưu tin nhắn', onBackup)}
         {item('cloud-download-outline', 'Khôi phục từ bản sao lưu', onRestore)}
-        {item('reload-outline', 'Kiểm tra bản cập nhật', onCheckUpdate)}
         {item('shield-checkmark-outline', 'Tài khoản và bảo mật')}
         {item('lock-closed-outline', 'Quyền riêng tư')}
       </View>
@@ -801,16 +799,6 @@ function Main({ me }) {
   const shared = { onSearch: () => setScreen({ type: 'search' }) };
   const goAdd = () => setScreen({ type: 'addfriend' });
   const goCompose = () => setScreen({ type: 'compose' });
-  const checkForUpdate = async () => {
-    try {
-      const result = await Updates.checkForUpdateAsync();
-      if (!result.isAvailable) { Alert.alert('Zou đã mới nhất', 'Chưa có bản cập nhật nào để tải.'); return; }
-      await Updates.fetchUpdateAsync();
-      Alert.alert('Đã tải bản mới', 'Chọn OK để mở lại ứng dụng với giao diện mới.', [{ text: 'OK', onPress: () => Updates.reloadAsync() }]);
-    } catch {
-      Alert.alert('Chưa thể kiểm tra', 'Tính năng này hoạt động trên bản IPA mới đã bật Expo Updates.');
-    }
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
@@ -830,7 +818,7 @@ function Main({ me }) {
               onDelete={deleteChat} onRead={readChat} goContacts={() => setTab(1)} />}
             {tab === 1 && <Contacts contacts={contacts} {...shared} onOpen={openChat} onAdd={goAdd} />}
             {tab === 2 && <Feed posts={posts} {...shared} onCompose={goCompose} onLike={like} onComment={comment} onDelete={delPost} />}
-            {tab === 3 && <Profile me={me} {...shared} onLogout={() => supabase.auth.signOut()} onBackup={backup} onRestore={restore} onCheckUpdate={checkForUpdate} />}
+            {tab === 3 && <Profile me={me} {...shared} onLogout={() => supabase.auth.signOut()} onBackup={backup} onRestore={restore} />}
           </View>
           {!kb && (
             <View style={s.tabBar}>
